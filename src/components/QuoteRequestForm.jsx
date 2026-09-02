@@ -149,6 +149,9 @@ export default function QuoteRequestForm() {
 
       {/* SECTION 4: PROMO, VISUELS & BILLETTERIE */}
       <h3 className="section-title">4. Promotion, Visuels & Vente</h3>
+      <div className="promo-disclaimer">
+  <strong>Note :</strong> La promotion locale, l'affichage physique et la mobilisation régionale demeurent sous la responsabilité du tenancier de l'événement.
+</div>
       <div className="form-grid-2">
         <div className="form-field">
           <label>Événement Facebook</label>

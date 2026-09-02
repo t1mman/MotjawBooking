@@ -291,3 +291,20 @@
     grid-template-columns: 1fr;
   }
 }
+.promo-disclaimer {
+  background: rgba(147, 51, 234, 0.12);
+  border-left: 3px solid #00ff88;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #c4b5fd;
+  margin-bottom: 14px;
+}
+
+.promo-disclaimer strong {
+  color: #00ff88;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
