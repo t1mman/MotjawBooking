@@ -7,56 +7,62 @@ export default function QuoteRequestForm() {
   const [hasOpeningBand, setHasOpeningBand] = useState('non');
   const [status, setStatus] = useState({ submitting: false, message: '', error: false });
 
-  const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-  const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-  const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+  // Récupération des deux gabarits
+const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const TEMPLATE_ADMIN_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const TEMPLATE_CLIENT_ID = import.meta.env.VITE_EMAILJS_CLIENT_TEMPLATE_ID;
+const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-  const createBookingId = () => {
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setStatus({ submitting: true, message: '', error: false });
+
+  const bookingId = createBookingId();
+  setGeneratedId(bookingId);
+
+  const formElement = formRef.current;
+
+  // Injection du Booking ID dans le formulaire
+  let idInput = formElement.querySelector('input[name="booking_id"]');
+  if (!idInput) {
+    idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'booking_id';
+    formElement.appendChild(idInput);
+  }
+  idInput.value = bookingId;
+
+  try {
+    // Envoi simultané des deux courriels
+    await Promise.all([
+      // Courriel 1: Équipe MOTJAW
+      emailjs.sendForm(SERVICE_ID, TEMPLATE_ADMIN_ID, formElement, { publicKey: PUBLIC_KEY }),
+      // Courriel 2: Accusé de réception client
+      emailjs.sendForm(SERVICE_ID, TEMPLATE_CLIENT_ID, formElement, { publicKey: PUBLIC_KEY })
+    ]);
+
+    setStatus({
+      submitting: false,
+      message: `Demande reçue! Votre numéro de dossier est : ${bookingId}. Un courriel de confirmation vous a été envoyé.`,
+      error: false,
+    });
+    formRef.current.reset();
+    setHasOpeningBand('non');
+  } catch (error) {
+    console.error('EmailJS Error:', error);
+    setStatus({
+      submitting: false,
+      message: 'Erreur lors de la transmission. Veuillez vérifier vos informations ou nous contacter directement.',
+      error: true,
+    });
+  }
+};
+
+const createBookingId = () => {
     const year = new Date().getFullYear();
     const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `MJ-${year}-${randomCode}`;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setStatus({ submitting: true, message: '', error: false });
-
-    const bookingId = createBookingId();
-    setGeneratedId(bookingId);
-
-    // Ajout dynamique du booking ID au formulaire
-    const formElement = formRef.current;
-    let idInput = formElement.querySelector('input[name="booking_id"]');
-    if (!idInput) {
-      idInput = document.createElement('input');
-      idInput.type = 'hidden';
-      idInput.name = 'booking_id';
-      formElement.appendChild(idInput);
-    }
-    idInput.value = bookingId;
-
-    emailjs
-      .sendForm(SERVICE_ID, TEMPLATE_ID, formElement, { publicKey: PUBLIC_KEY })
-      .then(
-        () => {
-          setStatus({
-            submitting: false,
-            message: `Demande reçue! Votre numéro de dossier est : ${bookingId}. Conservez-le pour le suivi.`,
-            error: false,
-          });
-          formRef.current.reset();
-          setHasOpeningBand('non');
-        },
-        (error) => {
-          console.error('EmailJS Error:', error);
-          setStatus({
-            submitting: false,
-            message: 'Erreur lors de l’envoi. Veuillez vérifier vos informations ou nous écrire directement.',
-            error: true,
-          });
-        }
-      );
-  };
+};
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="booking-form">
