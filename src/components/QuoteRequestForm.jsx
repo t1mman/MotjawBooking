@@ -36,51 +36,91 @@ export default function QuoteRequestForm() {
 
         setPhone(formatted);
     };
-    const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus({ submitting: true, message: '', error: false });
 
+    // 1. Initialiser les variables requises d'abord
     const bookingId = createBookingId();
     setGeneratedId(bookingId);
-
     const formElement = formRef.current;
 
-    // Injection du Booking ID dans le formulaire
+    // 2. Création de l'objet JSON propre
+    const payload = {
+      booking_id: bookingId,
+      created_at: new Date().toISOString(),
+      client: {
+        name: formElement.contact_name.value,
+        email: formElement.contact_email.value,
+        phone: phone,
+      },
+      event: {
+        date: formElement.event_date.value,
+        location: formElement.event_location.value,
+        formula: formElement.set_formula.value,
+      },
+      tech: {
+        sound: formElement.tech_sound.value,
+        lights: formElement.tech_lights.value,
+        sound_engineer: formElement.tech_engineer.value,
+        opening_band: hasOpeningBand,
+        opening_band_management: formElement.opening_band_management?.value || 'N/A',
+      },
+      promo: {
+        fb: formElement.promo_fb.value,
+        art: formElement.promo_art.value,
+        qr: formElement.promo_qr.value,
+        tickets: formElement.promo_tickets.value,
+      },
+      hospitality: {
+        meals: formElement.hospitality_meals.value,
+        hotel: formElement.hospitality_hotel.value,
+      },
+      notes: formElement.message.value,
+    };
+
+    // 3. Injection du JSON dans un input caché
+    let jsonInput = formElement.querySelector('input[name="json_payload"]');
+    if (!jsonInput) {
+      jsonInput = document.createElement('input');
+      jsonInput.type = 'hidden';
+      jsonInput.name = 'json_payload';
+      formElement.appendChild(jsonInput);
+    }
+    jsonInput.value = JSON.stringify(payload, null, 2);
+
+    // 4. Injection du Booking ID dans le formulaire
     let idInput = formElement.querySelector('input[name="booking_id"]');
     if (!idInput) {
-        idInput = document.createElement('input');
-        idInput.type = 'hidden';
-        idInput.name = 'booking_id';
-        formElement.appendChild(idInput);
+      idInput = document.createElement('input');
+      idInput.type = 'hidden';
+      idInput.name = 'booking_id';
+      formElement.appendChild(idInput);
     }
     idInput.value = bookingId;
 
+    // 5. Envoi des courriels
     try {
-        // Envoi simultané des deux courriels
-        await Promise.all([
-        // Courriel 1: Équipe MOTJAW
-        emailjs.sendForm(SERVICE_ID, TEMPLATE_ADMIN_ID, formElement, { publicKey: PUBLIC_KEY }),
-        // Courriel 2: Accusé de réception client
-        emailjs.sendForm(SERVICE_ID, TEMPLATE_CLIENT_ID, formElement, { publicKey: PUBLIC_KEY })
-        ]);
+      await emailjs.sendForm(SERVICE_ID, TEMPLATE_ADMIN_ID, formElement, { publicKey: PUBLIC_KEY });
+      await emailjs.sendForm(SERVICE_ID, TEMPLATE_CLIENT_ID, formElement, { publicKey: PUBLIC_KEY });
 
-        setStatus({
-            submitting: false,
-            message: `Demande reçue! Votre numéro de dossier est : ${bookingId}. Un courriel de confirmation vous a été envoyé.`,
-            error: false,
-        });
-        formRef.current.reset();
-        setPhone(''); // <-- Réinitialise l'affichage du téléphone
-        setHasOpeningBand('non');
+      setStatus({
+        submitting: false,
+        message: `Demande reçue! Votre numéro de dossier est : ${bookingId}. Un courriel de confirmation vous a été envoyé.`,
+        error: false,
+      });
+      formRef.current.reset();
+      setPhone('');
+      setHasOpeningBand('non');
     } catch (error) {
-        console.error('EmailJS Error:', error);
-        setStatus({
+      console.error('EmailJS Error:', error);
+      setStatus({
         submitting: false,
         message: 'Erreur lors de la transmission. Veuillez vérifier vos informations ou nous contacter directement.',
         error: true,
-        });
+      });
     }
-    };
+  };
 
     const createBookingId = () => {
         const year = new Date().getFullYear();
