@@ -39,25 +39,33 @@ L'application permet aux diffuseurs, festivals et tenanciers de soumettre leurs 
 
 ### 1. Cloner le projet
 
+```bash
 git clone https://github.com/t1mman/MotjawBooking.git
 cd MotjawBooking
+```
 
 ### 2. Installer les dépendances
 
+```bash
 npm install
+```
 
 ### 3. Configurer les variables d'environnement
 
 Crée un fichier `.env` à la racine du projet et ajoute tes identifiants EmailJS :
 
+```ini
 VITE_EMAILJS_SERVICE_ID=ton_service_id
 VITE_EMAILJS_TEMPLATE_ID=template_admin_id
 VITE_EMAILJS_CLIENT_TEMPLATE_ID=template_client_id
 VITE_EMAILJS_PUBLIC_KEY=ta_cle_publique
+```
 
 ### 4. Démarrer le serveur de développement
 
+```bash
 npm run dev
+```
 
 ---
 
@@ -80,6 +88,7 @@ Assure-toi d'ajouter ces 4 secrets dans **Settings > Secrets and variables > Act
 
 ## 📂 Structure du Projet
 
+```text
 MotjawBooking/
 ├── .github/workflows/deploy.yml   # Configuration CI/CD GitHub Actions
 ├── src/
@@ -94,6 +103,7 @@ MotjawBooking/
 │   └── main.jsx                   # Racine React
 ├── vite.config.js                 # Configuration Vite (base path GitHub Pages)
 └── package.json
+```
 
 ---
 
