@@ -5,64 +5,88 @@ export default function QuoteRequestForm() {
   const formRef = useRef(null);
   const [generatedId, setGeneratedId] = useState('');
   const [hasOpeningBand, setHasOpeningBand] = useState('non');
+  const [phone, setPhone] = useState('');
   const [status, setStatus] = useState({ submitting: false, message: '', error: false });
 
-  // Récupération des deux gabarits
-const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const TEMPLATE_ADMIN_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const TEMPLATE_CLIENT_ID = import.meta.env.VITE_EMAILJS_CLIENT_TEMPLATE_ID;
-const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+    // Récupération des deux gabarits
+    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const TEMPLATE_ADMIN_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+    const TEMPLATE_CLIENT_ID = import.meta.env.VITE_EMAILJS_CLIENT_TEMPLATE_ID;
+    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setStatus({ submitting: true, message: '', error: false });
+    // Fonction pour formater en (XXX) XXX-XXXX au fil de la frappe
+    const handlePhoneChange = (e) => {
+        // 1. Ne garder que les chiffres
+        const rawDigits = e.target.value.replace(/\D/g, '');
 
-  const bookingId = createBookingId();
-  setGeneratedId(bookingId);
+        // 2. Limiter à 10 chiffres (indicatif régional + numéro)
+        const digits = rawDigits.slice(0, 10);
 
-  const formElement = formRef.current;
+        // 3. Appliquer le masque progressivement
+        let formatted = '';
+        if (digits.length === 0) {
+        formatted = '';
+        } else if (digits.length <= 3) {
+        formatted = `(${digits}`;
+        } else if (digits.length <= 6) {
+        formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+        } else {
+        formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+        }
 
-  // Injection du Booking ID dans le formulaire
-  let idInput = formElement.querySelector('input[name="booking_id"]');
-  if (!idInput) {
-    idInput = document.createElement('input');
-    idInput.type = 'hidden';
-    idInput.name = 'booking_id';
-    formElement.appendChild(idInput);
-  }
-  idInput.value = bookingId;
+        setPhone(formatted);
+    };
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ submitting: true, message: '', error: false });
 
-  try {
-    // Envoi simultané des deux courriels
-    await Promise.all([
-      // Courriel 1: Équipe MOTJAW
-      emailjs.sendForm(SERVICE_ID, TEMPLATE_ADMIN_ID, formElement, { publicKey: PUBLIC_KEY }),
-      // Courriel 2: Accusé de réception client
-      emailjs.sendForm(SERVICE_ID, TEMPLATE_CLIENT_ID, formElement, { publicKey: PUBLIC_KEY })
-    ]);
+    const bookingId = createBookingId();
+    setGeneratedId(bookingId);
 
-    setStatus({
-      submitting: false,
-      message: `Demande reçue! Votre numéro de dossier est : ${bookingId}. Un courriel de confirmation vous a été envoyé.`,
-      error: false,
-    });
-    formRef.current.reset();
-    setHasOpeningBand('non');
-  } catch (error) {
-    console.error('EmailJS Error:', error);
-    setStatus({
-      submitting: false,
-      message: 'Erreur lors de la transmission. Veuillez vérifier vos informations ou nous contacter directement.',
-      error: true,
-    });
-  }
-};
+    const formElement = formRef.current;
 
-const createBookingId = () => {
-    const year = new Date().getFullYear();
-    const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `MJ-${year}-${randomCode}`;
-};
+    // Injection du Booking ID dans le formulaire
+    let idInput = formElement.querySelector('input[name="booking_id"]');
+    if (!idInput) {
+        idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'booking_id';
+        formElement.appendChild(idInput);
+    }
+    idInput.value = bookingId;
+
+    try {
+        // Envoi simultané des deux courriels
+        await Promise.all([
+        // Courriel 1: Équipe MOTJAW
+        emailjs.sendForm(SERVICE_ID, TEMPLATE_ADMIN_ID, formElement, { publicKey: PUBLIC_KEY }),
+        // Courriel 2: Accusé de réception client
+        emailjs.sendForm(SERVICE_ID, TEMPLATE_CLIENT_ID, formElement, { publicKey: PUBLIC_KEY })
+        ]);
+
+        setStatus({
+            submitting: false,
+            message: `Demande reçue! Votre numéro de dossier est : ${bookingId}. Un courriel de confirmation vous a été envoyé.`,
+            error: false,
+        });
+        formRef.current.reset();
+        setPhone(''); // <-- Réinitialise l'affichage du téléphone
+        setHasOpeningBand('non');
+    } catch (error) {
+        console.error('EmailJS Error:', error);
+        setStatus({
+        submitting: false,
+        message: 'Erreur lors de la transmission. Veuillez vérifier vos informations ou nous contacter directement.',
+        error: true,
+        });
+    }
+    };
+
+    const createBookingId = () => {
+        const year = new Date().getFullYear();
+        const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+        return `MJ-${year}-${randomCode}`;
+    };
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="booking-form">
@@ -78,9 +102,18 @@ const createBookingId = () => {
           <input type="email" name="contact_email" required placeholder="contact@festival.com" />
         </div>
         <div className="form-field">
-          <label>Téléphone *</label>
-          <input type="tel" name="contact_phone" required placeholder="(418) 555-0123" />
+        <label>Téléphone *</label>
+        <input
+            type="tel"
+            name="contact_phone"
+            required
+            value={phone}
+            onChange={handlePhoneChange}
+            placeholder="(418) 555-0123"
+            maxLength={14} // Bloque la saisie à "(XXX) XXX-XXXX" (14 caractères max)
+        />
         </div>
+
       </div>
 
       <div className="form-grid-3">
@@ -97,7 +130,9 @@ const createBookingId = () => {
           <select name="set_formula" required>
             <option value="1 set de 75-90 min (Best Of)">1 set de 75-90 min (Best Of)</option>
             <option value="2 sets de 45-50 min">2 sets de 45-50 min</option>
+            <option value="2 Super sets de 60+ min">2 Super sets de 60+ min</option>
             <option value="Format Festival (à déterminer)">Format Festival (créneau précis)</option>
+            <option value="Format Concert 120+ min">Format Concert 120+ min</option>
           </select>
         </div>
       </div>
@@ -156,8 +191,8 @@ const createBookingId = () => {
       {/* SECTION 4: PROMO, VISUELS & BILLETTERIE */}
       <h3 className="section-title">4. Promotion, Visuels & Vente</h3>
       <div className="promo-disclaimer">
-  <strong>Note :</strong> La promotion locale, l'affichage physique et la mobilisation régionale demeurent sous la responsabilité du tenancier de l'événement.
-</div>
+            <strong>Note :</strong> La promotion locale, l'affichage physique et la mobilisation régionale demeurent sous la responsabilité du tenancier de l'événement.
+        </div>
       <div className="form-grid-2">
         <div className="form-field">
           <label>Événement Facebook</label>
